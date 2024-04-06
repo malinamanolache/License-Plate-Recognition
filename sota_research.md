@@ -21,6 +21,5 @@
 |LicensePlateDetector|Last commit 8 months ago|NeuralNetwork for recognizing characters, Connected Component Analysis|Personal dataset|Not mentioned|[Code](https://github.com/apoorva-dave/LicensePlateDetector)|No paper|
 |Open-LPR|2023|-|-|-|[Code](https://github.com/faisalthaheem/open-lpr?tab=readme-ov-file)|No paper|
 |A Real-Time License Plate Detection Method Using a Deep Learning Approach|2021|YOLOv3|-|-|[Code](https://github.com/alitourani/yolo-license-plate-detection)|It has paper but need to enter with university account |
-
-
+|A Flexible Approach for Automatic License Plate Recognition in Unconstrained Scenarios|2021|YOLO|-still figuring it out-|UFPR-ALPR, OpenALPR-BR, AOLP, CD-HARD, ?CCPD?|They used this: https://github.com/claudiojung/iwpod-net|[Link](https://sci-hub.yncjkj.com/10.1109/tits.2021.3055946)|
 
