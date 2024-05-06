@@ -20,6 +20,6 @@
 |Persian License Plate Recognition System (PLPR)|2023|YOLO|[IR-LPR](https://github.com/mut-deep/IR-LPR), [Iranis-Dataset](https://github.com/alitourani/Iranis-dataset), [ILPR](https://github.com/amirmgh1375/iranian-license-plate-recognition)|Not mentioned, probably same as training|[Code](https://github.com/mtkarimi/persian-license-plate-recognition)|No paper|
 |LicensePlateDetector|Last commit 8 months ago|NeuralNetwork for recognizing characters, Connected Component Analysis|Personal dataset|Not mentioned|[Code](https://github.com/apoorva-dave/LicensePlateDetector)|No paper|
 |Open-LPR|2023|-|-|-|[Code](https://github.com/faisalthaheem/open-lpr?tab=readme-ov-file)|No paper|
-|A Real-Time License Plate Detection Method Using a Deep Learning Approach|2021|YOLOv3|-|-|[Code](https://github.com/alitourani/yolo-license-plate-detection)|It has paper but need to enter with university account |
+|A Real-Time License Plate Detection Method Using a Deep Learning Approach|2021|YOLOv3|-|-|[Code](https://github.com/alitourani/yolo-license-plate-detection) (doesn't have OCR)|It has paper but need to enter with university account |
 |A Flexible Approach for Automatic License Plate Recognition in Unconstrained Scenarios|2021|YOLO|-still figuring it out-|UFPR-ALPR, OpenALPR-BR, AOLP, CD-HARD, ?CCPD?|They used this: https://github.com/claudiojung/iwpod-net|[Link](https://sci-hub.yncjkj.com/10.1109/tits.2021.3055946)|
 
