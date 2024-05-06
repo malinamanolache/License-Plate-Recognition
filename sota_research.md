@@ -9,7 +9,7 @@
 |**CalTech Cars**|126|car|896 x 592|not provided but a lot of people use it for testing|Public|[Link](https://data.caltech.edu/records/fmbpr-ezq86)|
 |**PKU**|4,000|car|N/A|-LP segmenattions mask|Public|[Link](https://github.com/ofeeler/LPR/tree/master)|
 
-## Papers
+## Papers *i added a comments collumn -> scroll right
 
 |Title|Date|Architecture|Train dataset|Eval datasets|Code|Link|Comments|
 |-----|----|------------|-------------|-------------|----|----|--------|
@@ -21,5 +21,5 @@
 |LicensePlateDetector|Last commit 8 months ago|NeuralNetwork for recognizing characters, Connected Component Analysis|Personal dataset|Not mentioned|[Code](https://github.com/apoorva-dave/LicensePlateDetector)|No paper|none|
 |Open-LPR|2023|-|-|-|[Code](https://github.com/faisalthaheem/open-lpr?tab=readme-ov-file)|No paper|none|
 |A Real-Time License Plate Detection Method Using a Deep Learning Approach|2021|YOLOv3|-|-|[Code](https://github.com/alitourani/yolo-license-plate-detection) (doesn't have OCR)|It has paper but need to enter with university account |none|
-|A Flexible Approach for Automatic License Plate Recognition in Unconstrained Scenarios|2021|YOLO|-still figuring it out-|UFPR-ALPR, OpenALPR-BR, AOLP, CD-HARD, ?CCPD?|(it needs car cropped first. Other repos might need that too)(It also needs you to specify the type of vehicle: car, bus, truck)They used this: https://github.com/claudiojung/iwpod-net|[Link](https://sci-hub.yncjkj.com/10.1109/tits.2021.3055946)|none|
+|A Flexible Approach for Automatic License Plate Recognition in Unconstrained Scenarios|2021|YOLO|-still figuring it out-|UFPR-ALPR, OpenALPR-BR, AOLP, CD-HARD, ?CCPD?|(it needs car cropped first. Other repos might need that too)(It also needs you to specify the type of vehicle: car, bus, truck)They used this: https://github.com/claudiojung/iwpod-net|[Link](https://sci-hub.yncjkj.com/10.1109/tits.2021.3055946)|Localization works, but it doesn't include OCR|
 
