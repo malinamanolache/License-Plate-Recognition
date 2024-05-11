@@ -5,6 +5,49 @@ from typing import Dict, List, Tuple
 from matplotlib import pyplot as plt
 import matplotlib.image as mpimg
 import numpy as np
+from collections import namedtuple
+
+YoloLabel = namedtuple('YoloLabel', ['x', 'y', 'w', 'h'])
+
+def plot_processed_rodosol_label(image_path: str, label_path: str, out_path: str) -> None:
+    """
+    Plots processed RodoSol label in xywh format.
+
+    Args:
+        image_path: Path to RodoSol image sample.
+        label_path: Path to corresponding RodoSol image label.
+        out_path: Path to save the resulting plot.
+
+    Returns:
+        Saves plot with center bb and middle of rectangle verticed marked with x.
+
+    Raises:
+        ValueError: If image and label don't have the same name.
+    """
+    
+    if image_path.split(".")[0] != label_path.split(".")[0]:
+        raise ValueError("Image and label files must have the same name.")
+    
+    label_dict = read_file_as_dict(label_path)
+    bb_corners = np.array(process_bb_string(label_dict["corners"]))
+    img = mpimg.imread(image_path)
+
+    processed = bb_corners_to_xywh(bb_corners)
+
+    plt.figure()
+    plt.imshow(img)
+    plt.scatter(processed.x, processed.y, marker="x", color="red", s=100)
+    plt.scatter(processed.x, processed.y - processed.h//2, marker="x", color="red", s=70)
+    plt.scatter(processed.x, processed.y + processed.h//2, marker="x", color="red", s=70)
+    plt.scatter(processed.x - processed.w//2, processed.y, marker="x", color="red", s=70)
+    plt.scatter(processed.x + processed.w//2, processed.y, marker="x", color="red", s=70)
+
+    plt.xticks([]), plt.yticks([])
+    plt.savefig(out_path)
+    plt.clf()
+    plt.close()
+
+
 
 def plot_rodosol_label(image_path: str, label_path: str, out_path: str) -> None:
     """
@@ -42,7 +85,7 @@ def plot_rodosol_label(image_path: str, label_path: str, out_path: str) -> None:
     plt.close()
 
 
-def bb_corners_to_xywh(bb_corners: List[Tuple]) -> Tuple:
+def bb_corners_to_xywh(bb_corners: List[Tuple]) -> YoloLabel:
     """
     Transforms bb corners to x, y, width, height.
 
@@ -64,7 +107,7 @@ def bb_corners_to_xywh(bb_corners: List[Tuple]) -> Tuple:
     x = width // 2
     y = height // 2
 
-    return(x, y, width, height)
+    return YoloLabel(x=x, y=y, w=width, h=height)
 
 def process_bb_string(s: str) -> List[Tuple]:
     """
@@ -149,8 +192,8 @@ if __name__ == '__main__':
     parser.add_argument("--path", type=str, required=True, help="Path to dataset")
     args=parser.parse_args()
 
-    generate_labels(args.dataset, args.path)
+    # generate_labels(args.dataset, args.path)
 
-    plot_rodosol_label("/home/ia2/datasets/RodoSol-ALPR/images/cars-br/img_000001.jpg", 
-                        "/home/ia2/datasets/RodoSol-ALPR/images/cars-br/img_000002.txt",
+    plot_processed_rodosol_label("/home/ia2/datasets/RodoSol-ALPR/images/cars-br/img_000001.jpg", 
+                        "/home/ia2/datasets/RodoSol-ALPR/images/cars-br/img_000001.txt",
                         "/home/ia2/datasets/RodoSol-ALPR/label.png")
