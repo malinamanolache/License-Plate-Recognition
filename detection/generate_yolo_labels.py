@@ -2,6 +2,28 @@ import argparse
 import os 
 import json
 from typing import Dict, List, Tuple
+from matplotlib import pyplot as plt
+import matplotlib.image as mpimg
+import numpy as np
+
+def plot_rodosol_label(image_path: str, label_path: str, out_path: str) -> None:
+    label_dict = read_file_as_dict(label_path)
+    bb_corners = np.array(process_bb_string(label_dict["corners"]))
+    img = mpimg.imread(image_path)
+    
+    plt.figure()
+    plt.imshow(img)
+    for idx, point in enumerate(bb_corners):
+        # plot bb corner and order to figure how to process them later
+        plt.scatter(point[0], point[1], marker="x", color="red", s=100)
+        plt.text(point[0]-5, point[1], str(idx), fontsize="large", color="k", fontweight="bold")
+    
+    plt.xticks([]), plt.yticks([])
+    plt.savefig(out_path)
+    plt.clf()
+    plt.close()
+
+
 
 def process_bb_string(s: str) -> List[Tuple]:
     result = []
@@ -56,3 +78,7 @@ if __name__ == '__main__':
     args=parser.parse_args()
 
     generate_labels(args.dataset, args.path)
+
+    plot_rodosol_label("/home/ia2/datasets/RodoSol-ALPR/images/cars-br/img_000001.jpg", 
+                        "/home/ia2/datasets/RodoSol-ALPR/images/cars-br/img_000001.txt",
+                        "/home/ia2/datasets/RodoSol-ALPR/label.png")
