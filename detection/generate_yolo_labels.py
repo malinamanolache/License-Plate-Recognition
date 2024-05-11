@@ -44,11 +44,26 @@ def plot_rodosol_label(image_path: str, label_path: str, out_path: str) -> None:
 
 
 def process_bb_string(s: str) -> List[Tuple]:
+    """
+    Processes the boundind box string from RodoSol dataset
+
+    Args:
+        s: BB string defined as: "x,y x,y x,y x,y". Corners are 
+           separated by spaces and coordinate values by commas.
+
+    Returns:
+        A list of 4 lements where each element is a tuple with the 
+        corner coordinates
+
+    """
     result = []
     corners = s.split()
+    assert len(corners) == 4, "Bounding box does not match expected format. \
+                               There should be 4 coordinate pairs separated by whitespaces."
 
     for c in corners:
         coordinates_str = c.split(",")
+        assert len(coordinates_str) == 2, "Each corner must have 2 coordinates."
         # make them integers
         coordinates_int = tuple(map(lambda x: int(x), coordinates_str))
         result.append(coordinates_int)
