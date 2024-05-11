@@ -1,7 +1,20 @@
 import argparse
 import os 
 import json
-from typing import Dict
+from typing import Dict, List, Tuple
+
+def process_bb_string(s: str) -> List[Tuple]:
+    result = []
+    corners = s.split()
+
+    for c in corners:
+        coordinates_str = c.split(",")
+        # make them integers
+        coordinates_int = tuple(map(lambda x: int(x), coordinates_str))
+        result.append(coordinates_int)
+    
+    return result
+
 
 def read_file_as_dict(file_path: str) -> Dict:
     data = {}  
@@ -32,7 +45,8 @@ def generate_labels(dataset_name: str, path: str) -> None:
             label_path = os.path.join(img_dir, f"{name}.txt")
 
             # read label file and extract bb
-            label = read_file_as_dict(label_path)
+            label_dict = read_file_as_dict(label_path)
+            bb_corners = process_bb_string(label_dict["corners"])
 
 
 if __name__ == '__main__':
