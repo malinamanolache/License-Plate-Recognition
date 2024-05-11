@@ -19,7 +19,7 @@ def plot_processed_rodosol_label(image_path: str, label_path: str, out_path: str
         out_path: Path to save the resulting plot.
 
     Returns:
-        Saves plot with center bb and middle of rectangle verticed marked with x.
+        Saves plot with center bb maerked with "o" and middle of rectangle verticed marked with "X".
 
     Raises:
         ValueError: If image and label don't have the same name.
@@ -36,7 +36,7 @@ def plot_processed_rodosol_label(image_path: str, label_path: str, out_path: str
 
     plt.figure()
     plt.imshow(img)
-    plt.scatter(processed.x, processed.y, marker="x", color="red", s=100)
+    plt.scatter(processed.x, processed.y, marker="o", color="red", s=10)
     plt.scatter(processed.x, processed.y - processed.h//2, marker="x", color="red", s=70)
     plt.scatter(processed.x, processed.y + processed.h//2, marker="x", color="red", s=70)
     plt.scatter(processed.x - processed.w//2, processed.y, marker="x", color="red", s=70)
@@ -96,7 +96,6 @@ def bb_corners_to_xywh(bb_corners: List[Tuple]) -> YoloLabel:
     Returns:
         Tuple with bb in xywh format.
     """
-    
     top_left = bb_corners[0]
     top_right = bb_corners[1]
     bottom_left = bb_corners[2]
@@ -104,8 +103,8 @@ def bb_corners_to_xywh(bb_corners: List[Tuple]) -> YoloLabel:
 
     width = top_right[0] - top_left[0]
     height = top_left[1] - bottom_left[1]
-    x = width // 2
-    y = height // 2
+    x = top_left[0] + (width // 2)
+    y = top_left[1] - (height // 2)
 
     return YoloLabel(x=x, y=y, w=width, h=height)
 
