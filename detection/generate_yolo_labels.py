@@ -193,6 +193,12 @@ if __name__ == '__main__':
 
     # generate_labels(args.dataset, args.path)
 
-    plot_processed_rodosol_label("/home/ia2/datasets/RodoSol-ALPR/images/cars-br/img_000001.jpg", 
-                        "/home/ia2/datasets/RodoSol-ALPR/images/cars-br/img_000001.txt",
-                        "/home/ia2/datasets/RodoSol-ALPR/label.png")
+    
+    # Example on how to visualize the original and processed RodoSol plots:
+
+    test_img_path = os.path.join(args.path, args.dataset, "images/cars-br/img_000001.jpg")
+    test_label_path = os.path.join(args.path, args.dataset, "images/cars-br/img_000001.txt")
+    
+    plot_rodosol_label(test_img_path, test_label_path, "original_label.png")
+    plot_processed_rodosol_label(test_img_path, test_label_path, "processed_label.png")
+    
