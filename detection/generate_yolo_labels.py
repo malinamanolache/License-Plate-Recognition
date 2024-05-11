@@ -42,6 +42,29 @@ def plot_rodosol_label(image_path: str, label_path: str, out_path: str) -> None:
     plt.close()
 
 
+def bb_corners_to_xywh(bb_corners: List[Tuple]) -> Tuple:
+    """
+    Transforms bb corners to x, y, width, height.
+
+    Args:
+        bb_corners: List of tuples with the corner coordinates, the order is:
+                    top left, top right, bottom right, bottom left.
+    
+    Returns:
+        Tuple with bb in xywh format.
+    """
+    
+    top_left = bb_corners[0]
+    top_right = bb_corners[1]
+    bottom_left = bb_corners[2]
+    bottom_right = bb_corners[3]
+
+    width = top_right[0] - top_left[0]
+    height = top_left[1] - bottom_left[1]
+    x = width // 2
+    y = height // 2
+
+    return(x, y, width, height)
 
 def process_bb_string(s: str) -> List[Tuple]:
     """
