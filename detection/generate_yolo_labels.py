@@ -7,6 +7,24 @@ import matplotlib.image as mpimg
 import numpy as np
 
 def plot_rodosol_label(image_path: str, label_path: str, out_path: str) -> None:
+    """
+    Plots RodoSol bounding box corners. The purpose is to visualize the order of the corners.
+
+    Args:
+        image_path: Path to RodoSol image sample.
+        label_path: Path to corresponding RodoSol image label.
+        out_path: Path to save the resulting plot.
+
+    Returns:
+        Saves plot with corners marked with "X" and their order.
+
+    Raises:
+        ValueError: If image and label don't have the same name.
+    """
+    
+    if image_path.split(".")[0] != label_path.split(".")[0]:
+        raise ValueError("Image and label files must have the same name.")
+    
     label_dict = read_file_as_dict(label_path)
     bb_corners = np.array(process_bb_string(label_dict["corners"]))
     img = mpimg.imread(image_path)
@@ -80,5 +98,5 @@ if __name__ == '__main__':
     generate_labels(args.dataset, args.path)
 
     plot_rodosol_label("/home/ia2/datasets/RodoSol-ALPR/images/cars-br/img_000001.jpg", 
-                        "/home/ia2/datasets/RodoSol-ALPR/images/cars-br/img_000001.txt",
+                        "/home/ia2/datasets/RodoSol-ALPR/images/cars-br/img_000002.txt",
                         "/home/ia2/datasets/RodoSol-ALPR/label.png")
