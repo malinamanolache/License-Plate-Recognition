@@ -43,7 +43,7 @@ def plot_processed_rodosol_label(image_path: str, label_path: str, out_path: str
     plt.scatter(processed.x + processed.w//2, processed.y, marker="x", color="red", s=70)
 
     plt.xticks([]), plt.yticks([])
-    plt.savefig(out_path)
+    plt.savefig(out_path, bbox_inches='tight')
     plt.clf()
     plt.close()
 
@@ -80,7 +80,7 @@ def plot_rodosol_label(image_path: str, label_path: str, out_path: str) -> None:
         plt.text(point[0]-5, point[1], str(idx), fontsize="large", color="k", fontweight="bold")
     
     plt.xticks([]), plt.yticks([])
-    plt.savefig(out_path)
+    plt.savefig(out_path, bbox_inches='tight')
     plt.clf()
     plt.close()
 
