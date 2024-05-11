@@ -72,6 +72,22 @@ def process_bb_string(s: str) -> List[Tuple]:
 
 
 def read_file_as_dict(file_path: str) -> Dict:
+    """
+    Reads RodoSol .txt label file and returns a dict. Example of RodoSol label:
+    
+    type: car
+    plate: ODE2510
+    layout: Brazilian
+    corners: 558,438 687,439 687,482 558,481
+
+
+    Args:
+        file_path: Path to .txt label file.
+
+    Returns:
+        Dict with 4 keys.
+
+    """
     data = {}  
     with open(file_path, 'r') as file:
         for line in file:
