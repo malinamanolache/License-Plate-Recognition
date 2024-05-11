@@ -1,5 +1,17 @@
 import argparse
 import os 
+import json
+from typing import Dict
+
+def read_file_as_dict(file_path: str) -> Dict:
+    data = {}  
+    with open(file_path, 'r') as file:
+        for line in file:
+            # Split each line into key and value using ':'
+            key, value = line.strip().split(': ')
+            # Add the key-value pair to the dictionary
+            data[key] = value
+    return data
 
 
 def generate_labels(dataset_name: str, path: str) -> None:
@@ -14,6 +26,13 @@ def generate_labels(dataset_name: str, path: str) -> None:
         files = sorted(os.listdir(img_dir))
         file_names = list(map(lambda x: x.split('.')[0], files))
         file_names = set(file_names)
+
+        for name in file_names:
+            image_path = os.path.join(img_dir, f"{name}.jpg")
+            label_path = os.path.join(img_dir, f"{name}.txt")
+
+            # read label file and extract bb
+            label = read_file_as_dict(label_path)
 
 
 if __name__ == '__main__':
