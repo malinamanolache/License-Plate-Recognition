@@ -163,10 +163,63 @@ def read_file_as_dict(file_path: str) -> Dict:
     return data
 
 
+def write_to_file(content: str, output_file: str) -> None:
+    """
+    Writes data to .txt file.
+
+    Args:
+        content: Data to be saved.
+        output_file: Path to output file.
+    """
+    with open(output_file, 'a') as file:
+        file.write(content + '\n')
+
+
+def generate_train_test_valid_files(split_path: str) -> None:
+    """
+    Generates train.txt, valid.txt and test.txt files for yolo trainings. RodoSol
+    provides a split.txt file containing the image paths and corresponding split as follows:
+
+    ./images/cars-br/img_004765.jpg;validation
+    ./images/cars-br/img_004150.jpg;training
+    ./images/cars-me/img_013144.jpg;testing
+
+    To the image paths, "data/obj/" is prepended to prepare the files for darknet.
+
+
+    Args:
+        split_path: Path to split.txt file from RodoSol.
+
+    """
+    train_file = "train.txt"
+    valid_file = "valid.txt"
+    test_file = "test.txt"
+
+    with open(split_path, 'r') as file:
+        for line in file:
+            file_path, label = line.strip().split(';')
+            file_path = os.path.normpath(os.path.join("data/obj/", file_path))
+
+            if label == 'training':
+                write_to_file(file_path, train_file)
+            elif label == 'validation':
+                write_to_file(file_path, valid_file)
+            elif label == 'testing':
+                write_to_file(file_path, test_file)
+
+
 def generate_labels(dataset_name: str, path: str) -> None:
     if dataset_name not in ["RodoSol-ALPR", "UFPR"]:
         raise ValueError("Dataset name must be one of ['RodoSol-ALPR', 'UFPR']")
 
+    # create train test valid split files
+    split_path = os.path.join(path, dataset_name, "split.txt")
+    if not os.path.exists(split_path):
+        raise FileNotFoundError(f"RodoSol should have a split.txt file, check the dataset!")
+    else:
+        generate_train_test_valid_files(split_path)
+        exit()
+        
     images_path = os.path.join(path, dataset_name, "images")
     obj_types = sorted(os.listdir(images_path))
 
@@ -182,7 +235,7 @@ def generate_labels(dataset_name: str, path: str) -> None:
 
             # read label file and extract bb
             label_dict = read_file_as_dict(label_path)
-            bb_corners = process_bb_string(label_dict["corners"])
+            label_dict["corners"] = process_bb_string(label_dict["corners"])
 
 
 if __name__ == '__main__':
@@ -191,14 +244,14 @@ if __name__ == '__main__':
     parser.add_argument("--path", type=str, required=True, help="Path to dataset")
     args=parser.parse_args()
 
-    # generate_labels(args.dataset, args.path)
+    generate_labels(args.dataset, args.path)
 
     
     # Example on how to visualize the original and processed RodoSol plots:
 
-    test_img_path = os.path.join(args.path, args.dataset, "images/cars-br/img_000001.jpg")
-    test_label_path = os.path.join(args.path, args.dataset, "images/cars-br/img_000001.txt")
+    # test_img_path = os.path.join(args.path, args.dataset, "images/cars-br/img_000001.jpg")
+    # test_label_path = os.path.join(args.path, args.dataset, "images/cars-br/img_000001.txt")
     
-    plot_rodosol_label(test_img_path, test_label_path, "original_label.png")
-    plot_processed_rodosol_label(test_img_path, test_label_path, "processed_label.png")
+    # plot_rodosol_label(test_img_path, test_label_path, "original_label.png")
+    # plot_processed_rodosol_label(test_img_path, test_label_path, "processed_label.png")
     
