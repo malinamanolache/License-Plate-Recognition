@@ -102,7 +102,7 @@ def bb_corners_to_xywh(bb_corners: List[Tuple]) -> YoloLabel:
     bottom_right = bb_corners[3]
 
     width = top_right[0] - top_left[0]
-    height = top_left[1] - bottom_left[1]
+    height = bottom_left[1] - top_left[1]
     x = top_left[0] + (width // 2)
     y = top_left[1] - (height // 2)
 
@@ -207,6 +207,19 @@ def generate_train_test_valid_files(split_path: str) -> None:
             elif label == 'testing':
                 write_to_file(file_path, test_file)
 
+def save_yolo_label_to_file(path: str, label: YoloLabel, obj_class: int=0) -> None:
+    """
+    Saves yolo xywh label format to txt file
+
+    Args:
+        path: Path to .txt file.
+        label: YoloLabel tuple.
+        obj_class: The class of the object, defaults to 0 as RodoSol has 1 class only: license plate
+
+    """
+    with open(path, 'w') as file:
+        file.write(f"{obj_class} {label.x} {label.y} {label.w} {label.h}\n")
+
 
 def generate_labels(dataset_name: str, path: str) -> None:
     if dataset_name not in ["RodoSol-ALPR", "UFPR"]:
@@ -218,7 +231,6 @@ def generate_labels(dataset_name: str, path: str) -> None:
         raise FileNotFoundError(f"RodoSol should have a split.txt file, check the dataset!")
     else:
         generate_train_test_valid_files(split_path)
-        exit()
         
     images_path = os.path.join(path, dataset_name, "images")
     obj_types = sorted(os.listdir(images_path))
@@ -237,6 +249,14 @@ def generate_labels(dataset_name: str, path: str) -> None:
             label_dict = read_file_as_dict(label_path)
             label_dict["corners"] = process_bb_string(label_dict["corners"])
 
+            # save original label to json to not lose info
+            json_path = os.path.join(img_dir, f"{name}.json")
+            with open(json_path, "w") as outfile: 
+                json.dump(label_dict, outfile)
+
+            yolo_label = bb_corners_to_xywh(label_dict["corners"])
+            save_yolo_label_to_file(label_path, yolo_label)
+
 
 if __name__ == '__main__':
     parser=argparse.ArgumentParser()
@@ -249,8 +269,8 @@ if __name__ == '__main__':
     
     # Example on how to visualize the original and processed RodoSol plots:
 
-    # test_img_path = os.path.join(args.path, args.dataset, "images/cars-br/img_000001.jpg")
-    # test_label_path = os.path.join(args.path, args.dataset, "images/cars-br/img_000001.txt")
+    # test_img_path = os.path.join(args.path, args.dataset, "images/cars-br/img_000439.jpg")
+    # test_label_path = os.path.join(args.path, args.dataset, "images/cars-br/img_000439.txt")
     
     # plot_rodosol_label(test_img_path, test_label_path, "original_label.png")
     # plot_processed_rodosol_label(test_img_path, test_label_path, "processed_label.png")
