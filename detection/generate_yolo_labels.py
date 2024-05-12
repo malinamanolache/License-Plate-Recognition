@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 import matplotlib.image as mpimg
 import numpy as np
 from collections import namedtuple
+import cv2
 
 YoloLabel = namedtuple('YoloLabel', ['x', 'y', 'w', 'h'])
 
@@ -29,18 +30,24 @@ def plot_processed_rodosol_label(image_path: str, label_path: str, out_path: str
         raise ValueError("Image and label files must have the same name.")
     
     label_dict = read_file_as_dict(label_path)
-    bb_corners = np.array(process_bb_string(label_dict["corners"]))
     img = mpimg.imread(image_path)
+    img_height, img_width, _ = img.shape
+    
+    bb_corners = np.array(process_bb_string(label_dict["corners"]))
+    normalized = bb_corners_to_xywh(bb_corners, img_height, img_width)
 
-    processed = bb_corners_to_xywh(bb_corners)
+    label = YoloLabel(x=int(normalized.x * img_width),
+                       y=int(normalized.y * img_height),
+                       w=int(normalized.w * img_width),
+                       h=int(normalized.h * img_height))
 
     plt.figure()
     plt.imshow(img)
-    plt.scatter(processed.x, processed.y, marker="o", color="red", s=10)
-    plt.scatter(processed.x, processed.y - processed.h//2, marker="x", color="red", s=70)
-    plt.scatter(processed.x, processed.y + processed.h//2, marker="x", color="red", s=70)
-    plt.scatter(processed.x - processed.w//2, processed.y, marker="x", color="red", s=70)
-    plt.scatter(processed.x + processed.w//2, processed.y, marker="x", color="red", s=70)
+    plt.scatter(label.x, label.y, marker="o", color="red", s=10)
+    plt.scatter(label.x, label.y - label.h//2, marker="x", color="red", s=70)
+    plt.scatter(label.x, label.y + label.h//2, marker="x", color="red", s=70)
+    plt.scatter(label.x - label.w//2, label.y, marker="x", color="red", s=70)
+    plt.scatter(label.x + label.w//2, label.y, marker="x", color="red", s=70)
 
     plt.xticks([]), plt.yticks([])
     plt.savefig(out_path, bbox_inches='tight')
@@ -85,13 +92,15 @@ def plot_rodosol_label(image_path: str, label_path: str, out_path: str) -> None:
     plt.close()
 
 
-def bb_corners_to_xywh(bb_corners: List[Tuple]) -> YoloLabel:
+def bb_corners_to_xywh(bb_corners: List[Tuple], img_height: int, img_width: int) -> YoloLabel:
     """
-    Transforms bb corners to x, y, width, height.
+    Transforms bb corners to x, y, width, height normalized by the image width and height.
 
     Args:
         bb_corners: List of tuples with the corner coordinates, the order is:
                     top left, top right, bottom right, bottom left.
+        img_height: Height of corresponding image.
+        img_width: Width of corresponding img.
     
     Returns:
         Tuple with bb in xywh format.
@@ -104,9 +113,9 @@ def bb_corners_to_xywh(bb_corners: List[Tuple]) -> YoloLabel:
     width = top_right[0] - top_left[0]
     height = bottom_left[1] - top_left[1]
     x = top_left[0] + (width // 2)
-    y = top_left[1] - (height // 2)
+    y = top_left[1] + (height // 2) 
 
-    return YoloLabel(x=x, y=y, w=width, h=height)
+    return YoloLabel(x=x/img_width, y=y/img_height, w=width/img_width, h=height/img_height)
 
 def process_bb_string(s: str) -> List[Tuple]:
     """
@@ -245,6 +254,9 @@ def generate_labels(dataset_name: str, path: str) -> None:
             image_path = os.path.join(img_dir, f"{name}.jpg")
             label_path = os.path.join(img_dir, f"{name}.txt")
 
+            img = cv2.imread(image_path)
+            img_height, img_width, _ = img.shape
+
             # read label file and extract bb
             label_dict = read_file_as_dict(label_path)
             label_dict["corners"] = process_bb_string(label_dict["corners"])
@@ -254,7 +266,7 @@ def generate_labels(dataset_name: str, path: str) -> None:
             with open(json_path, "w") as outfile: 
                 json.dump(label_dict, outfile)
 
-            yolo_label = bb_corners_to_xywh(label_dict["corners"])
+            yolo_label = bb_corners_to_xywh(label_dict["corners"], img_height, img_width)
             save_yolo_label_to_file(label_path, yolo_label)
 
 
