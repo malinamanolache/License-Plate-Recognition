@@ -35,6 +35,9 @@ def plot_detections(json_file: str, dataset_path: str, out_path: str) -> None:
 
         for obj in result["objects"]:
             relative_coordinates = obj["relative_coordinates"]
+            confidence = obj["confidence"]
+            img_label = f"{'{0:.2f}'.format(confidence*100)}%"
+
             xywh = (relative_coordinates["center_x"],
                     relative_coordinates["center_y"],
                     relative_coordinates["width"],
@@ -42,8 +45,13 @@ def plot_detections(json_file: str, dataset_path: str, out_path: str) -> None:
 
             corners = compute_corners_from_xywh((height, width), xywh)
 
-            boxes.append(corners)
+            img = cv2.rectangle(img, corners[0], corners[1], color=(0, 0, 255), thickness=2)
+            img = cv2.putText(img, img_label, (corners[0][0], corners[0][1] - 5),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
+        filename = "_".join(img_partial_path.split("/"))
+        filepath = os.path.join(out_path, filename)
+        cv2.imwrite(filepath, img)
 
 if __name__ == '__main__':
     parser=argparse.ArgumentParser()
