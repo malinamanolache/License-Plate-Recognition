@@ -6,40 +6,6 @@ import numpy as np
 import os
 import json
 
-# weights_path = "/home/ia2/License-Plate-Recognition/detection/yolo/yolov4-custom-rodosol_best.weights"
-# config_path = (
-#     "/home/ia2/License-Plate-Recognition/detection/yolo/yolov4-custom-rodosol.cfg"
-# )
-# classes_path = "/home/ia2/License-Plate-Recognition/detection/yolo/obj.rodosol_names"
-
-# CONFIDENCE_THRESHOLD = 0.2
-# NMS_THRESHOLD = 0.4
-# COLORS = [(0, 255, 255), (255, 255, 0), (0, 255, 0), (255, 0, 0)]
-# class_names = []
-# with open(classes_path, "r") as f:
-#     class_names = [cname.strip() for cname in f.readlines()]
-
-# net = cv2.dnn.readNet(weights_path, config_path)
-# net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
-# net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA_FP16)
-
-# model = cv2.dnn_DetectionModel(net)
-# model.setInputParams(size=(704, 704), scale=1 / 255, swapRB=True)
-# frame = cv2.imread(
-#     "/home/ia2/License-Plate-Recognition/detection/darknet/data/obj/images/cars-br/img_000002.jpg"
-# )
-
-# classes, scores, boxes = model.detect(frame, CONFIDENCE_THRESHOLD, NMS_THRESHOLD)
-# for classid, score, box in zip(classes, scores, boxes):
-#     color = COLORS[int(classid) % len(COLORS)]
-#     label = "%s : %f" % (class_names[classid], score)
-#     cv2.rectangle(frame, box, color, 2)
-#     cv2.putText(
-#         frame, label, (box[0], box[1] - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2
-#     )
-
-# cv2.imwrite("output.png", frame)
-
 
 def detect(
     model,
@@ -109,24 +75,24 @@ def run_detector(
             img = cv2.imread(file)
             img, result = detect(model, img, class_names)
             results.append(result)
-            
+
             image_name = os.path.basename(input_path)
             cv2.imwrite(os.path.join(save_path, image_name), img)
 
         json_path = os.path.join(save_path, "result.json")
-        with open(json_path, 'w') as fout:
-            json.dump([result] , fout, indent=2)
+        with open(json_path, "w") as fout:
+            json.dump([result], fout, indent=2)
 
     elif os.path.isfile(input_path):
         img, result = detect(model, input_path, class_names)
-        
+
         # save image and result
         image_name = os.path.basename(input_path)
         cv2.imwrite(os.path.join(save_path, image_name), img)
 
         json_path = os.path.join(save_path, "result.json")
-        with open(json_path, 'w') as fout:
-            json.dump([result] , fout, indent=2)
+        with open(json_path, "w") as fout:
+            json.dump([result], fout, indent=2)
 
 
 if __name__ == "__main__":
