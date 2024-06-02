@@ -18,14 +18,14 @@ def generate_json(root_dir: str) -> None:
             
             img_name = os.path.basename(file_path)
             img_path = os.path.normpath(os.path.join(root_dir, file_path))
-            img_paths.append(img_path)
+            
             
             txt_file = f"{file_path.split('.')[1]}.txt"
             txt_full_path = os.path.join(root_dir, txt_file.lstrip(os.path.sep))
             
             if label != 'testing':
                 continue
-
+            img_paths.append(img_path)
             img_label = read_file_as_dict(txt_full_path)
             corners = process_bb_string(img_label["corners"])
             xyxy = [corners[0][0], corners[0][1], corners[2][0], corners[2][1]]
