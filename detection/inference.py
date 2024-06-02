@@ -70,15 +70,20 @@ def detect_fatserrcnn(model, filename: str, class_names: list) -> tuple:
     objects = []
     result_dict["filename"] = filename
     result_dict["model_name"] = "fasterRCNN"
-    result_dict["box_type"] = "top left, bottom right"
+    result_dict["box_type"] = "xyxy"
 
-    for pred in preds:
-        classid = pred["labels"].cpu().detach() - 1 # for fastercnn 0 is background class
-        score = pred["scores"].cpu().detach()
-        box = pred["boxes"].cpu().detach()
-        box = np.array(box[0], dtype=np.int64)
-        
+    # detach all values
+    preds = [{k:v.cpu().detach().numpy() for k, v in preds[0].items()}]
+
+    list_of_dicts = [dict(zip(preds[0],t)) for t in zip(*preds[0].values())]
+
+    for pred in list_of_dicts:
+        classid = pred["labels"] - 1 # for fastercnn 0 is background class
+        score = pred["scores"]
+        box = pred["boxes"]
+        box = np.array(box, dtype=np.int64)
         label = "%s : %f" % (class_names[classid], score)
+        
         cv2.rectangle(img, (box[0], box[1]), (box[2], box[3]), color, 2)
         cv2.putText(
             img, label, (box[0], box[1] - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2
@@ -205,7 +210,7 @@ if __name__ == "__main__":
         "--out",
         type=str,
         required=False,
-        default="/yolo_detections",
+        default="/result",
         help="Path to output directory.",
     )
     parser.add_argument(
