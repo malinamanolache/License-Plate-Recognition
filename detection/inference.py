@@ -5,9 +5,11 @@ import glob
 import numpy as np
 import os
 import json
+import torchvision
+import torch
 
 
-def detect(
+def detect_yolo(
     model,
     filename: str,
     class_names: list,
@@ -43,56 +45,75 @@ def detect(
 
     return (image, result_dict)
 
+def detect(model_name: str, model, filename: str, save_path: str, draw_boxes: bool=False) -> list:
+    class_names = ["plate"]
+    results = []
+    
+    if model == "yolo":
+        img, result = detect_yolo(model, filename, class_names)
+        results.append(result)
 
-def run_detector(
-    model_path: str, input_path: str, image_size: list, save_path: str
-) -> None:
-    # process model paths
-    weights = glob.glob(f"{model_path}/*.weights")[0]
-    classes = glob.glob(f"{model_path}/*.txt")[0]
-    cfg = glob.glob(f"{model_path}/*.cfg")[0]
-
-    # get model
-    net = cv2.dnn.readNet(weights, cfg)
-    net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
-    net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA_FP16)
-
-    model = cv2.dnn_DetectionModel(net)
-    model.setInputParams(size=image_size, scale=1 / 255, swapRB=True)
-
-    # get classes
-    class_names = []
-    with open(classes, "r") as f:
-        class_names = [cname.strip() for cname in f.readlines()]
-
-    os.makedirs(save_path, exist_ok=True)
-
-    if os.path.isdir(input_path):
-        files = sorted(os.listdir(input_path))
-        results = []
-
-        for file in files:
-            img = cv2.imread(file)
-            img, result = detect(model, img, class_names)
-            results.append(result)
-
-            image_name = os.path.basename(input_path)
+        # save image with bounding boxes
+        if draw_boxes:
+            image_name = os.path.basename(filename)
             cv2.imwrite(os.path.join(save_path, image_name), img)
 
-        json_path = os.path.join(save_path, "result.json")
-        with open(json_path, "w") as fout:
-            json.dump([result], fout, indent=2)
+    return results
 
+def run_detector(
+    model_path: str, model_name: str, input_path: str, image_size: list, save_path: str, draw_boxes: bool=False
+) -> None:
+    
+    os.makedirs(save_path, exist_ok=True)
+    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    
+    # get model
+    if model_name == "yolo":
+        # process model paths
+        weights = glob.glob(f"{model_path}/*.weights")[0]
+        cfg = glob.glob(f"{model_path}/*.cfg")[0]
+
+        # get model
+        net = cv2.dnn.readNet(weights, cfg)
+        net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
+        net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA_FP16)
+
+        model = cv2.dnn_DetectionModel(net)
+        model.setInputParams(size=image_size, scale=1 / 255, swapRB=True)
+    
+    elif model_name == "fasterrcnn":
+        model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=None, 
+                                                                num_classes=2)
+        model.load_state_dict(torch.load(model_path))
+        model.to(device)
+        model.eval()
+
+
+    # process input
+    if os.path.isdir(input_path):
+        # assumes directory with images
+        files = sorted(os.listdir(input_path))
+        
     elif os.path.isfile(input_path):
-        img, result = detect(model, input_path, class_names)
+        # check if path is image
+        if input_path.lower().endswith(('.png', '.jpg', '.jpeg')):
+            files = [input_path]
+        
+        elif input_path.lower().endswith('.txt'):
+            # txt file with image paths
+            files = []
+            with open(input_path, 'r') as f:
+                for line in f:
+                    files.append(line)
+        else:
+            raise ValueError("Input file should be either .png/.jpg/.jpeg image or .txt file with image paths.")
 
-        # save image and result
-        image_name = os.path.basename(input_path)
-        cv2.imwrite(os.path.join(save_path, image_name), img)
-
-        json_path = os.path.join(save_path, "result.json")
-        with open(json_path, "w") as fout:
-            json.dump([result], fout, indent=2)
+    for file in files:
+        results = detect(model_name, model, file, save_path, draw_boxes)
+    
+    json_path = os.path.join(save_path, "result.json")
+    with open(json_path, "w") as fout:
+        json.dump(results, fout, indent=2)
 
 
 if __name__ == "__main__":
@@ -101,7 +122,15 @@ if __name__ == "__main__":
         "--model_path",
         type=str,
         required=True,
-        help="Directory that contains model config, weights and file with class names.",
+        help="For yolo: directory that contains model config, weights and file with class names. \
+            For fasterrcnn: path to pth file.",
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        choices=["yolo", "fatserrcnn"],
+        required=True,
+        help="Model to perform inference on.",
     )
     parser.add_argument(
         "--input",
@@ -123,7 +152,12 @@ if __name__ == "__main__":
         default="/yolo_detections",
         help="Path to output directory.",
     )
+    parser.add_argument(
+        "--draw_bb",
+        action='store_true'
+        help="If passed it will save the images with the boundong boxes drawn.",
+    )
+
     args = parser.parse_args()
 
-    print(args.input)
     run_detector(args.model_path, args.input, args.image_size, args.out)
