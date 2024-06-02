@@ -7,6 +7,9 @@ import os
 import json
 import torchvision
 import torch
+from torchvision import transforms
+import tqdm
+
 
 
 def detect_yolo(
@@ -24,6 +27,8 @@ def detect_yolo(
     result_dict = {}
     objects = []
     result_dict["filename"] = filename
+    result_dict["model_name"] = "yolo"
+    result_dict["box_type"] = "xywh"
 
     for classid, score, box in zip(classes, scores, boxes):
         label = "%s : %f" % (class_names[classid], score)
@@ -45,20 +50,68 @@ def detect_yolo(
 
     return (image, result_dict)
 
+def detect_fatserrcnn(model, filename: str, class_names: list) -> tuple:
+    img = cv2.imread(str(filename))
+
+    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+
+    transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+        ])
+
+    img_tensor = transform(img)
+    img_tensor = img_tensor.to(device)
+    preds = model([img_tensor])
+
+    color = (0, 0, 255)
+
+    result_dict = {}
+    objects = []
+    result_dict["filename"] = filename
+    result_dict["model_name"] = "fasterRCNN"
+    result_dict["box_type"] = "top left, bottom right"
+
+    for pred in preds:
+        classid = pred["labels"].cpu().detach() - 1 # for fastercnn 0 is background class
+        score = pred["scores"].cpu().detach()
+        box = pred["boxes"].cpu().detach()
+        box = np.array(box[0], dtype=np.int64)
+        
+        label = "%s : %f" % (class_names[classid], score)
+        cv2.rectangle(img, (box[0], box[1]), (box[2], box[3]), color, 2)
+        cv2.putText(
+            img, label, (box[0], box[1] - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2
+        )
+
+        objects.append(
+            {
+                "class_id": int(classid),
+                "class_name": class_names[classid],
+                "box": box.tolist(),
+                "confidence": float(score),
+            }
+        )
+
+    result_dict["objects"] = objects
+
+    return (img, result_dict)
+
+
 def detect(model_name: str, model, filename: str, save_path: str, draw_boxes: bool=False) -> list:
     class_names = ["plate"]
-    results = []
     
-    if model == "yolo":
+    if model_name == "yolo":
         img, result = detect_yolo(model, filename, class_names)
-        results.append(result)
+    elif model_name == "fasterrcnn":
+        img, result = detect_fatserrcnn(model, filename, class_names)
+    
+    # save image with bounding boxes
+    if draw_boxes:
+        image_name = os.path.basename(filename)
+        cv2.imwrite(os.path.join(save_path, image_name), img)
 
-        # save image with bounding boxes
-        if draw_boxes:
-            image_name = os.path.basename(filename)
-            cv2.imwrite(os.path.join(save_path, image_name), img)
-
-    return results
+    return result
 
 def run_detector(
     model_path: str, model_name: str, input_path: str, image_size: list, save_path: str, draw_boxes: bool=False
@@ -92,7 +145,8 @@ def run_detector(
     # process input
     if os.path.isdir(input_path):
         # assumes directory with images
-        files = sorted(os.listdir(input_path))
+        filenames = sorted(os.listdir(input_path))
+        files = list(map(lambda x: os.path.join(input_path, x), filenames))
         
     elif os.path.isfile(input_path):
         # check if path is image
@@ -104,12 +158,14 @@ def run_detector(
             files = []
             with open(input_path, 'r') as f:
                 for line in f:
-                    files.append(line)
+                    files.append(line.strip())
         else:
             raise ValueError("Input file should be either .png/.jpg/.jpeg image or .txt file with image paths.")
 
-    for file in files:
-        results = detect(model_name, model, file, save_path, draw_boxes)
+    results = []
+    for file in tqdm.tqdm(files):
+        result = detect(model_name, model, file, save_path, draw_boxes)
+        results.append(result)
     
     json_path = os.path.join(save_path, "result.json")
     with open(json_path, "w") as fout:
@@ -128,7 +184,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model",
         type=str,
-        choices=["yolo", "fatserrcnn"],
+        choices=["yolo", "fasterrcnn"],
         required=True,
         help="Model to perform inference on.",
     )
@@ -154,10 +210,10 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--draw_bb",
-        action='store_true'
-        help="If passed it will save the images with the boundong boxes drawn.",
+        action='store_true',
+        help="If passed it will save the images with the boundong boxes drawn."
     )
 
     args = parser.parse_args()
 
-    run_detector(args.model_path, args.input, args.image_size, args.out)
+    run_detector(args.model_path, args.model, args.input, args.image_size, args.out, args.draw_bb)
