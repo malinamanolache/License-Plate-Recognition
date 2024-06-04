@@ -184,7 +184,7 @@ def write_to_file(content: str, output_file: str) -> None:
         file.write(content + '\n')
 
 
-def generate_train_test_valid_files(split_path: str) -> None:
+def generate_train_test_valid_files(dataset_path: str, split_path: str) -> None:
     """
     Generates train.txt, valid.txt and test.txt files for yolo trainings. RodoSol
     provides a split.txt file containing the image paths and corresponding split as follows:
@@ -200,14 +200,15 @@ def generate_train_test_valid_files(split_path: str) -> None:
         split_path: Path to split.txt file from RodoSol.
 
     """
-    train_file = "train.txt"
-    valid_file = "valid.txt"
-    test_file = "test.txt"
+    train_file = "train_rodosol.txt"
+    valid_file = "valid_rodosol.txt"
+    test_file = "test_rodosol.txt"
 
     with open(split_path, 'r') as file:
         for line in file:
             file_path, label = line.strip().split(';')
-            file_path = os.path.normpath(os.path.join("data/obj/", file_path))
+            file_path = file_path.lstrip("./")
+            file_path = os.path.join(dataset_path, file_path)
 
             if label == 'training':
                 write_to_file(file_path, train_file)
@@ -231,43 +232,90 @@ def save_yolo_label_to_file(path: str, label: YoloLabel, obj_class: int=0) -> No
 
 
 def generate_labels(dataset_name: str, path: str) -> None:
-    if dataset_name not in ["RodoSol-ALPR", "UFPR"]:
-        raise ValueError("Dataset name must be one of ['RodoSol-ALPR', 'UFPR']")
+    if dataset_name not in ["rodosol", "ufpr"]:
+        raise ValueError("Dataset name must be one of ['rodosol', 'ufpr']")
 
     # create train test valid split files
-    split_path = os.path.join(path, dataset_name, "split.txt")
-    if not os.path.exists(split_path):
-        raise FileNotFoundError(f"RodoSol should have a split.txt file, check the dataset!")
-    else:
-        generate_train_test_valid_files(split_path)
+    if dataset_name == "rodosol": 
+        split_path = os.path.join(path, "split.txt")
+        if not os.path.exists(split_path):
+            raise FileNotFoundError(f"RodoSol should have a split.txt file, check the dataset!")
+        else:
+            generate_train_test_valid_files(path, split_path)
         
-    images_path = os.path.join(path, dataset_name, "images")
-    obj_types = sorted(os.listdir(images_path))
+        images_path = os.path.join(path, "images")
+        obj_types = sorted(os.listdir(images_path))
+        files = []
 
-    for obj_type in obj_types:
-        img_dir = os.path.join(images_path, obj_type)
-        files = sorted(os.listdir(img_dir))
-        file_names = list(map(lambda x: x.split('.')[0], files))
-        file_names = set(file_names)
+        for obj_type in obj_types:
+            img_dir = os.path.join(images_path, obj_type)
+            files = sorted(os.listdir(img_dir))
 
-        for name in file_names:
-            image_path = os.path.join(img_dir, f"{name}.jpg")
-            label_path = os.path.join(img_dir, f"{name}.txt")
+            # get the absolute path of the files
+            abs_paths = list(map(lambda x: os.path.join(path, "images", obj_type, x), files))
 
-            img = cv2.imread(image_path)
-            img_height, img_width, _ = img.shape
+            # remove extensions
+            file_names = list(map(lambda x: x.split('.')[0], abs_paths))
+            file_names = set(file_names)
 
-            # read label file and extract bb
-            label_dict = read_file_as_dict(label_path)
-            label_dict["corners"] = process_bb_string(label_dict["corners"])
+            files += file_names
+            print(f"{len(files)} samples in {dataset_name}")
 
-            # save original label to json to not lose info
-            json_path = os.path.join(img_dir, f"{name}.json")
-            with open(json_path, "w") as outfile: 
-                json.dump(label_dict, outfile)
+    elif dataset_name == "ufpr":
+        splits = os.listdir(path)
+        files = []
 
-            yolo_label = bb_corners_to_xywh(label_dict["corners"], img_height, img_width)
-            save_yolo_label_to_file(label_path, yolo_label)
+        for split in splits:
+            
+            split_path = os.path.join(path, split)
+            if not os.path.isdir(split_path):
+                continue
+            tracks = os.listdir(split_path)
+
+            for track in tracks:
+                track_path = os.path.join(path, split, track)
+                track_files = os.listdir(track_path)
+                abs_paths = list(map(lambda x: os.path.join(track_path, x), track_files))
+
+                # remove extensions
+                file_names = list(map(lambda x: x.split('.')[0], abs_paths))
+                file_names = set(file_names)
+
+                files += file_names
+
+            paths_txt_file = f"{split}_ufpr.txt"
+            img_paths = list(map(lambda x: f"{x}.png", files))
+
+            # save paths to .txt file for yolo
+            with open(paths_txt_file, 'w') as f:
+                for line in img_paths:
+                    f.write(f"{line}\n")
+
+        print(f"{len(files)} samples in {dataset_name}")
+
+    for filename in files:
+        if dataset_name == "rodosol":
+            img_format = "jpg"
+        else:
+            img_format = "png"
+        
+        image_path = os.path.join(f"{filename}.{img_format}")
+        label_path = os.path.join(f"{filename}.txt")
+
+        img = cv2.imread(image_path)
+        img_height, img_width, _ = img.shape
+
+        # read label file and extract bb
+        label_dict = read_file_as_dict(label_path)
+        label_dict["corners"] = process_bb_string(label_dict["corners"])
+
+        # save original label to json to not lose info
+        json_path = os.path.join(f"{filename}.json")
+        with open(json_path, "w") as outfile: 
+            json.dump(label_dict, outfile)
+
+        yolo_label = bb_corners_to_xywh(label_dict["corners"], img_height, img_width)
+        save_yolo_label_to_file(label_path, yolo_label)
 
 
 if __name__ == '__main__':
@@ -281,8 +329,8 @@ if __name__ == '__main__':
     
     # Example on how to visualize the original and processed RodoSol plots:
 
-    # test_img_path = os.path.join(args.path, args.dataset, "images/cars-br/img_000439.jpg")
-    # test_label_path = os.path.join(args.path, args.dataset, "images/cars-br/img_000439.txt")
+    # test_img_path = os.path.join(args.path, "testing/track0091/track0091[01].png")
+    # test_label_path = os.path.join(args.path, "testing/track0091/track0091[01].txt")
     
     # plot_rodosol_label(test_img_path, test_label_path, "original_label.png")
     # plot_processed_rodosol_label(test_img_path, test_label_path, "processed_label.png")
