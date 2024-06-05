@@ -31,7 +31,7 @@ def detect_yolo(
     result_dict["box_type"] = "xywh"
 
     for classid, score, box in zip(classes, scores, boxes):
-        label = "%s : %f" % (class_names[classid], score)
+        label = "%s" % (class_names[classid])
         cv2.rectangle(image, box, color, 2)
         cv2.putText(
             image, label, (box[0], box[1] - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2
@@ -103,9 +103,7 @@ def detect_fatserrcnn(model, filename: str, class_names: list) -> tuple:
     return (img, result_dict)
 
 
-def detect(model_name: str, model, filename: str, save_path: str, draw_boxes: bool=False) -> list:
-    class_names = ["plate"]
-    
+def detect(model_name: str, model, filename: str, save_path: str, class_names: list, draw_boxes: bool=False) -> list:    
     if model_name == "yolo":
         img, result = detect_yolo(model, filename, class_names)
     elif model_name == "fasterrcnn":
@@ -130,7 +128,12 @@ def run_detector(
         # process model paths
         weights = glob.glob(f"{model_path}/*.weights")[0]
         cfg = glob.glob(f"{model_path}/*.cfg")[0]
+        classes = glob.glob(f"{model_path}/*.txt")[0]
 
+        class_names = []	
+        with open(classes, "r") as f:	
+            class_names = [cname.strip() for cname in f.readlines()]
+        
         # get model
         net = cv2.dnn.readNet(weights, cfg)
         net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
@@ -140,12 +143,12 @@ def run_detector(
         model.setInputParams(size=image_size, scale=1 / 255, swapRB=True)
     
     elif model_name == "fasterrcnn":
+        class_names = ["plate"]
         model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=None, 
                                                                 num_classes=2)
         model.load_state_dict(torch.load(model_path))
         model.to(device)
         model.eval()
-
 
     # process input
     if os.path.isdir(input_path):
@@ -169,7 +172,7 @@ def run_detector(
 
     results = []
     for file in tqdm.tqdm(files):
-        result = detect(model_name, model, file, save_path, draw_boxes)
+        result = detect(model_name, model, file, save_path, class_names, draw_boxes)
         results.append(result)
     
     json_path = os.path.join(save_path, "result.json")
@@ -203,7 +206,7 @@ if __name__ == "__main__":
         "--image_size",
         type=tuple,
         required=False,
-        default=(704, 704),
+        default=(352, 128),
         help="Shape of the yolo training images, can be found in the yolo cfg file.",
     )
     parser.add_argument(
