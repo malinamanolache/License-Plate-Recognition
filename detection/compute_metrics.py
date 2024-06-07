@@ -85,10 +85,6 @@ def compute_metrics(gt_json: str, pred_json: str) -> None:
     print(f"cIoU = {final_ciou['ciou']}")
     print(f"gIoU = {final_giou['giou']}")
 
-    
-
-        
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
