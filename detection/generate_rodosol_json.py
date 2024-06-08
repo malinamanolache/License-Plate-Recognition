@@ -32,10 +32,11 @@ def generate_json(root_dir: str) -> None:
 
             gt = {"filename": img_name,
                   "dataset": "rodosol",
-                  "class_name": "plate",
+                  "objects":[
+                  {"class_name": "plate",
                   "class_id": 0,
                   "box_type": "xyxy",
-                  "box": xyxy}
+                  "box": xyxy}]}
             
             rodosol_gt.append(gt)
 
