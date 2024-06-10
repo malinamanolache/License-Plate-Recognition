@@ -10,7 +10,15 @@ import torch
 from torchvision import transforms
 import tqdm
 
+def xywh_to_xyxy(xywh: list) -> list:
+    # yolo returns top left and width hight actually
+    top_left_x = xywh[0] 
+    top_left_y = xywh[1] 
 
+    bottom_right_x = xywh[0] + xywh[2] 
+    bottom_right_y = xywh[1] + xywh[3] 
+
+    return [top_left_x, top_left_y, bottom_right_x, bottom_right_y]
 
 def detect_yolo(
     model,
@@ -28,7 +36,7 @@ def detect_yolo(
     objects = []
     result_dict["filename"] = filename
     result_dict["model_name"] = "yolo"
-    result_dict["box_type"] = "xywh"
+    result_dict["box_type"] = "xyxy"
 
     for classid, score, box in zip(classes, scores, boxes):
         label = "%s" % (class_names[classid])
@@ -37,11 +45,12 @@ def detect_yolo(
             image, label, (box[0], box[1] - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2
         )
 
+        box = xywh_to_xyxy(box.tolist())
         objects.append(
             {
                 "class_id": int(classid),
                 "class_name": class_names[classid],
-                "box": box.tolist(),
+                "box": box,
                 "confidence": float(score),
             }
         )
@@ -206,7 +215,7 @@ if __name__ == "__main__":
         "--image_size",
         type=tuple,
         required=False,
-        default=(352, 128),
+        default=(704, 704),
         help="Shape of the yolo training images, can be found in the yolo cfg file.",
     )
     parser.add_argument(
