@@ -12,6 +12,15 @@ def load_json(path: str) -> list:
     data = json.load(file)
     return data
 
+def xywh_to_xyxy(xywh: list) -> list:
+    top_left_x = xywh[0] 
+    top_left_y = xywh[1]
+
+    bottom_right_x = xywh[0] + xywh[2]
+    bottom_right_y = xywh[1] + xywh[3] 
+
+    return [top_left_x, top_left_y, bottom_right_x, bottom_right_y]
+
 def map_by_filename(list_of_dicts: list) -> dict:
     mapped_dict = {}
 
@@ -34,11 +43,20 @@ def torchmetrics_dict(inference_dict: dict, preds=False) -> dict:
 
     boxes = torch.zeros(num_objects, 4)
     labels = torch.zeros(num_objects, dtype=torch.int)
-
+    
     if preds:
         scores = torch.zeros(num_objects)
 
+    to_xyxy = False
+    if preds:
+        if inference_dict["box_type"] == "xywh":
+            to_xyxy = True
+
     for idx, obj in enumerate(objects):
+        
+        if to_xyxy:
+            obj["box"] = xywh_to_xyxy(obj["box"])
+
         boxes[idx, :] = torch.tensor(obj["box"]).float()
         labels[idx] = int(obj["class_id"])
         if preds:
@@ -66,7 +84,7 @@ def compute_metrics(gt_json: str, pred_json: str) -> None:
     ciou = CompleteIntersectionOverUnion(box_format='xyxy')
     giou = GeneralizedIntersectionOverUnion(box_format='xyxy')
 
-    for file in tqdm.tqdm(files):
+    for file in tqdm.tqdm(files):        
         gt = [torchmetrics_dict(ground_truths[file])]
         pred = [torchmetrics_dict(predictions[file], preds=True)]
 
@@ -80,7 +98,7 @@ def compute_metrics(gt_json: str, pred_json: str) -> None:
     final_ciou = ciou.compute()
     final_giou = giou.compute()
     
-    print(f"MaP = {final_map['map'].item()}")
+    print(f"MaP = {final_map}")
     print(f"IoU = {final_iou['iou']}")
     print(f"cIoU = {final_ciou['ciou']}")
     print(f"gIoU = {final_giou['giou']}")
