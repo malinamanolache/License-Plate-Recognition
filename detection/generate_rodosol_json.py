@@ -30,12 +30,14 @@ def generate_json(root_dir: str) -> None:
             corners = process_bb_string(img_label["corners"])
             xyxy = [corners[0][0], corners[0][1], corners[2][0], corners[2][1]]
 
+
             gt = {"filename": img_name,
                   "dataset": "rodosol",
-                  "class_name": "plate",
+                  "objects":[
+                  {"class_name": "plate",
                   "class_id": 0,
                   "box_type": "xyxy",
-                  "box": xyxy}
+                  "box": xyxy}]}
             
             rodosol_gt.append(gt)
 
