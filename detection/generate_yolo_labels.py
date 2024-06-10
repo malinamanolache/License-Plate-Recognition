@@ -253,10 +253,10 @@ def generate_labels(dataset_name: str, path: str) -> None:
 
             # get the absolute path of the files
             abs_paths = list(map(lambda x: os.path.join(path, "images", obj_type, x), files))
-
+            abs_paths = set(abs_paths)
             # remove extensions
             file_names = list(map(lambda x: x.split('.')[0], abs_paths))
-            file_names = set(file_names)
+            
 
             files += file_names
             print(f"{len(files)} samples in {dataset_name}")
@@ -292,15 +292,18 @@ def generate_labels(dataset_name: str, path: str) -> None:
                     f.write(f"{line}\n")
 
         print(f"{len(files)} samples in {dataset_name}")
-
+    
+    
     for filename in files:
         if dataset_name == "rodosol":
             img_format = "jpg"
         else:
             img_format = "png"
         
-        image_path = os.path.join(f"{filename}.{img_format}")
-        label_path = os.path.join(f"{filename}.txt")
+        image_path = f"{filename}.{img_format}"
+        label_path = f"{filename}.txt"
+
+        print(image_path)
 
         img = cv2.imread(image_path)
         img_height, img_width, _ = img.shape
